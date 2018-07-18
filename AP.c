@@ -16,6 +16,7 @@ Minimizar los costos asociados a no respetar los tiempos ideales de aterrizaje d
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #define MAX_AVIONES 500
 
 struct Data {
@@ -88,6 +89,29 @@ struct Data initData(FILE *file){
 	return chargedData;
 }
 
+int * initialSolutions(struct Data chargedData){
+	//generar solución aleatoria para cada avión
+	static int initialSolution[MAX_AVIONES];
+	printf("La cantidad de aviones es: %i \n", chargedData.numAviones);
+	
+	srand(time(0));
+	
+	for (int j=0; j<chargedData.numAviones; j++){
+		//get min and max airland time for each airplane
+		int min = chargedData.avionesArray[j][0];
+		printf("El min para el avion %i es %i \n", j, min);
+		int max = chargedData.avionesArray[j][2];
+		printf("El max para el avion %i es %i \n", j, max);
+		//generate random time for each airplane between e_i and l_i
+		int num = (rand() % (max - min +1)) + min;
+		printf("El random para el avion %i es %i \n", j, num);
+		initialSolution[j] = num;
+		printf("El random en initialSolution[] para el avion %i es %i \n", j, initialSolution[j]);
+	}
+	
+	return initialSolution;
+}
+
 int main(int argc, char *argv[]) {
 	//Se define un puntero a FILE para manejar archivos 
 	FILE *file = NULL;
@@ -104,7 +128,13 @@ int main(int argc, char *argv[]) {
 	}
 
 	struct Data chargedData = initData(file);
-	printf("El total de aviones es: %i \n", chargedData.numAviones);
+
+	int *initialSolution;
+	initialSolution = initialSolutions(chargedData);
+
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("La solution inicial para el avion %i es %i \n", i, initialSolution[i]);
+	}
 
 	fclose(file);
 	return 0;
