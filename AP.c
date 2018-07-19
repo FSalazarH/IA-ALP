@@ -18,6 +18,8 @@ Minimizar los costos asociados a no respetar los tiempos ideales de aterrizaje d
 #include <string.h>
 #include <time.h>
 #define MAX_AVIONES 500
+#define false 0
+#define true 1
 
 struct Data {
 	int numAviones;
@@ -89,27 +91,61 @@ struct Data initData(FILE *file){
 	return chargedData;
 }
 
+//Create initial random solution for all airplanes in their respective landing time
 int * initialSolutions(struct Data chargedData){
 	//generar solución aleatoria para cada avión
 	static int initialSolution[MAX_AVIONES];
-	printf("La cantidad de aviones es: %i \n", chargedData.numAviones);
-	
+
+	//setting random seed	
 	srand(time(0));
 	
 	for (int j=0; j<chargedData.numAviones; j++){
+
 		//get min and max airland time for each airplane
 		int min = chargedData.avionesArray[j][0];
-		printf("El min para el avion %i es %i \n", j, min);
 		int max = chargedData.avionesArray[j][2];
-		printf("El max para el avion %i es %i \n", j, max);
+
 		//generate random time for each airplane between e_i and l_i
 		int num = (rand() % (max - min +1)) + min;
-		printf("El random para el avion %i es %i \n", j, num);
+
+		//add random number to initialSolution
 		initialSolution[j] = num;
-		printf("El random en initialSolution[] para el avion %i es %i \n", j, initialSolution[j]);
 	}
-	
+
 	return initialSolution;
+}
+
+//Check separation times between all planes
+int checkDistances(struct Data chargedData, int initialSolution[]){
+	int boolDistances;
+
+	for (int i=0; i<chargedData.numAviones; i++){
+
+		int land1 = initialSolution[i];
+		printf("Comparando aterrizaje %i : %i \n",i, land1);
+
+		for (int j=0; j<chargedData.numAviones; j++){
+			if (i != j){
+				int land2 = initialSolution[j];
+				printf("Con aterrizaje %i : %i \n", j , land2);
+				printf("La separacion entre ambos debe ser mayor a: %i \n", chargedData.distancias[i][j]);
+				printf("Y es... %i \n ", abs(land2-land1));
+
+				//If distance is OK
+				if(abs(land2-land1) > chargedData.distancias[i][j]){
+					printf("Se respeta la distancia \n");
+					boolDistances = true;
+				}
+				else{
+					printf("No se respeta la distancia entre avion %i y %i \n", i, j);
+					printf("Las distancias son %i y %i \n ", land1, land2);
+					boolDistances = false;
+					return boolDistances;
+				}
+			}
+		}
+	}
+	return boolDistances;
 }
 
 int main(int argc, char *argv[]) {
@@ -127,14 +163,18 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	//charge initial Data from file
 	struct Data chargedData = initData(file);
 
+	//define pointer to initialSolution Array
 	int *initialSolution;
+
+	//get initial solution 
 	initialSolution = initialSolutions(chargedData);
 
-	for (int i=0; i<chargedData.numAviones; i++){
-		printf("La solution inicial para el avion %i es %i \n", i, initialSolution[i]);
-	}
+	//Check the separation times between all planes
+	int boolDistances;
+	boolDistances = checkDistances(chargedData, initialSolution);
 
 	fclose(file);
 	return 0;
