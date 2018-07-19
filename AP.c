@@ -76,12 +76,12 @@ struct Data initData(FILE *file){
 			printf("%i ", chargedData.avionesArray[i][j]);
 		}printf("\n");
 	}
-	printf("imprimiendo las penalizaciones para los %i aviones \n", numAviones);
+	/*printf("imprimiendo las penalizaciones para los %i aviones \n", numAviones);
 	for (int i=0; i<numAviones; i++){
 		for (int j=0; j<2; j++){
 			printf("%f ", chargedData.penalizaciones[i][j]);
 		}printf("\n");
-	}
+	}*/
 	printf("imprimiendo las distancias entre los %i aviones \n", numAviones);
 	for (int i=0; i<numAviones; i++){
 		for (int j=0; j<numAviones; j++){
@@ -97,12 +97,13 @@ int * initialSolutions(struct Data chargedData){
 	static int initialSolution[MAX_AVIONES];
 
 	//setting random seed	
-	srand(time(0));
+	srand(time(NULL));
 	
 	for (int j=0; j<chargedData.numAviones; j++){
 
 		//get min and max airland time for each airplane
 		int min = chargedData.avionesArray[j][0];
+		int opt = chargedData.avionesArray[j][1];
 		int max = chargedData.avionesArray[j][2];
 
 		//generate random time for each airplane between e_i and l_i
@@ -112,10 +113,15 @@ int * initialSolutions(struct Data chargedData){
 		initialSolution[j] = num;
 	}
 
+	printf("La solucion inicial es: ");
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("%i ", initialSolution[i]);
+	} printf("\n ");
+
 	return initialSolution;
 }
 
-//Check separation times between all planes
+//Check separation times between all planes, return true if distances are ok and return false in other case
 int checkDistances(struct Data chargedData, int initialSolution[]){
 	int boolDistances;
 
@@ -149,6 +155,9 @@ int checkDistances(struct Data chargedData, int initialSolution[]){
 }
 
 int main(int argc, char *argv[]) {
+	//begin clock
+	clock_t begin = clock();
+
 	//Se define un puntero a FILE para manejar archivos 
 	FILE *file = NULL;
 
@@ -175,6 +184,26 @@ int main(int argc, char *argv[]) {
 	//Check the separation times between all planes
 	int boolDistances;
 	boolDistances = checkDistances(chargedData, initialSolution);
+	printf("La distancia se cumple: %i \n", boolDistances);
+
+	int *finalInitialSolution;
+	//check factibility of first initial solution
+	if (boolDistances == true){
+		printf("La solucion cumple con las restricciones duras");
+	}
+	else{
+		for (;;) {
+			finalInitialSolution = initialSolutions(chargedData);
+			boolDistances = checkDistances(chargedData, finalInitialSolution);
+			if (boolDistances == true){
+				break;
+			}
+		}
+	}
+	
+	clock_t end = clock();
+	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+	printf("El programa tarda %f en encontrar una solucion factible \n", time_spent);
 
 	fclose(file);
 	return 0;
