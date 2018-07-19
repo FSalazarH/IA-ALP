@@ -22,10 +22,15 @@ Minimizar los costos asociados a no respetar los tiempos ideales de aterrizaje d
 #define true 1
 
 struct Data {
-	int numAviones;
-	int avionesArray[MAX_AVIONES][3];
-	float penalizaciones[MAX_AVIONES][2];
-	int distancias[MAX_AVIONES][MAX_AVIONES];
+	int numAviones;								//number of planes
+	int avionesArray[MAX_AVIONES][3];			//matrix with landing times
+	float penalizaciones[MAX_AVIONES][2];		//matrix with e_i and l_i (penalizations)
+	int distancias[MAX_AVIONES][MAX_AVIONES];	//matrix with distances
+};
+
+struct penalSolution{
+	int initialSolution[MAX_AVIONES];
+	float penalizacionSolution[MAX_AVIONES];
 };
 
 //Funcion que carga los datos para los aviones, sus penalizaciones y distancias, recibe un puntero al archivo de instancia. 
@@ -121,7 +126,7 @@ int * initialSolutions(struct Data chargedData){
 	return initialSolution;
 }
 
-//Check separation times between all planes, return true if distances are ok and return false in other case
+//Check separation times between all planes, return true if all distances are ok and return false in other case
 int checkDistances(struct Data chargedData, int initialSolution[]){
 	int boolDistances;
 
@@ -152,6 +157,25 @@ int checkDistances(struct Data chargedData, int initialSolution[]){
 		}
 	}
 	return boolDistances;
+}
+
+float * penalizaciones(struct Data chargedData, int initialSolution[], struct penalSolution penalSolution){
+	float penalizaciones[MAX_AVIONES];
+	for (int i=0; i<chargedData.numAviones; i++){
+
+		int ti = chargedData.avionesArray[i][1]; //ideal landing time for each plane
+
+		int realTime = initialSolution[i]; 		 //real landing time of our solution
+
+		//compare landing time for penalization
+		if(realTime > ti){
+			penalizaciones[i] = *chargedData.penalizaciones[1];
+			printf("Agregando penalizacion %f \n", *chargedData.penalizaciones[1]);
+		}
+		else{
+			penalizaciones[i] = *chargedData.penalizaciones[0];
+		}
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -187,6 +211,7 @@ int main(int argc, char *argv[]) {
 	printf("La distancia se cumple: %i \n", boolDistances);
 
 	int *finalInitialSolution;
+
 	//check factibility of first initial solution
 	if (boolDistances == true){
 		printf("La solucion cumple con las restricciones duras");
@@ -200,7 +225,17 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	
+	printf("La solución es : ");
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("%i ", finalInitialSolution[i]);
+	}printf("\n ");
+
+	struct penalSolution penalSolution;
+	for(int i=0; i<chargedData.numAviones; i++){
+		penalSolution.initialSolution[i] = finalInitialSolution[i];
+	}
+	printf("el primer valor de la solucion inicial es: %i \n", penalSolution.initialSolution[0]);
+
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
 	printf("El programa tarda %f en encontrar una solucion factible \n", time_spent);
