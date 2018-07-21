@@ -159,8 +159,11 @@ int checkDistances(struct Data chargedData, int initialSolution[]){
 	return boolDistances;
 }
 
+//Funcion que setea las penalizaciones para los aterrizajes de cada avión de la solución inicial
 float * penalizaciones(struct Data chargedData, int initialSolution[], struct penalSolution penalSolution){
-	float penalizaciones[MAX_AVIONES];
+	
+	static float penalizaciones[MAX_AVIONES];
+
 	for (int i=0; i<chargedData.numAviones; i++){
 
 		int ti = chargedData.avionesArray[i][1]; //ideal landing time for each plane
@@ -169,13 +172,13 @@ float * penalizaciones(struct Data chargedData, int initialSolution[], struct pe
 
 		//compare landing time for penalization
 		if(realTime > ti){
-			penalizaciones[i] = *chargedData.penalizaciones[1];
-			printf("Agregando penalizacion %f \n", *chargedData.penalizaciones[1]);
+			penalizaciones[i] = chargedData.penalizaciones[i][1];
 		}
 		else{
-			penalizaciones[i] = *chargedData.penalizaciones[0];
+			penalizaciones[i] = chargedData.penalizaciones[i][0];
 		}
 	}
+	return penalizaciones;
 }
 
 int main(int argc, char *argv[]) {
@@ -210,6 +213,7 @@ int main(int argc, char *argv[]) {
 	boolDistances = checkDistances(chargedData, initialSolution);
 	printf("La distancia se cumple: %i \n", boolDistances);
 
+	//final initial Solution (factible)
 	int *finalInitialSolution;
 
 	//check factibility of first initial solution
@@ -230,11 +234,25 @@ int main(int argc, char *argv[]) {
 		printf("%i ", finalInitialSolution[i]);
 	}printf("\n ");
 
+	//penalizations for finalInitialSolution
 	struct penalSolution penalSolution;
+
+	//Add finalInitialSolution to struct that contain the penalizations for this solution
 	for(int i=0; i<chargedData.numAviones; i++){
 		penalSolution.initialSolution[i] = finalInitialSolution[i];
 	}
-	printf("el primer valor de la solucion inicial es: %i \n", penalSolution.initialSolution[0]);
+
+	//Seteando las penalizaciones
+	float *penalizacionesArray = penalizaciones(chargedData, finalInitialSolution, penalSolution);
+	for(int i=0; i<chargedData.numAviones; i++){
+		penalSolution.penalizacionSolution[i] = penalizacionesArray[i];
+	}
+
+	printf("las penalizaciones son: ");
+	for(int i=0; i<chargedData.numAviones; i++){
+		printf("%f ", penalSolution.penalizacionSolution[i]);
+	}printf("\n ");
+
 
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
