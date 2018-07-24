@@ -21,6 +21,7 @@ Minimizar los costos asociados a no respetar los tiempos ideales de aterrizaje d
 #define false 0
 #define true 1
 
+//Struct que contiene toda la data inicial
 struct Data {
 	int numAviones;								//number of planes
 	int avionesArray[MAX_AVIONES][3];			//matrix with landing times
@@ -28,6 +29,7 @@ struct Data {
 	int distancias[MAX_AVIONES][MAX_AVIONES];	//matrix with distances
 };
 
+//Struct que contendrá la solución y su penalización
 struct penalSolution{
 	int initialSolution[MAX_AVIONES];
 	float penalizacionSolution[MAX_AVIONES];
@@ -75,24 +77,24 @@ struct Data initData(FILE *file){
 		}
 		numLines+=1;
 	}	
-	printf("imprimiendo las distancias para los %i aviones \n", numAviones);
+	/*printf("imprimiendo las distancias para los %i aviones \n", numAviones);
 	for (int i=0; i<numAviones; i++){
 		for (int j=0; j<3; j++){
 			printf("%i ", chargedData.avionesArray[i][j]);
 		}printf("\n");
-	}
+	}*/
 	/*printf("imprimiendo las penalizaciones para los %i aviones \n", numAviones);
 	for (int i=0; i<numAviones; i++){
 		for (int j=0; j<2; j++){
 			printf("%f ", chargedData.penalizaciones[i][j]);
 		}printf("\n");
-	}*/
+	}
 	printf("imprimiendo las distancias entre los %i aviones \n", numAviones);
 	for (int i=0; i<numAviones; i++){
 		for (int j=0; j<numAviones; j++){
 			printf("%i ", chargedData.distancias[i][j]);
 		}printf("\n");
-	}
+	}*/
 	return chargedData;
 }
 
@@ -118,38 +120,39 @@ int * initialSolutions(struct Data chargedData){
 		initialSolution[j] = num;
 	}
 
-	printf("La solucion inicial es: ");
+	/*printf("La solucion inicial es: ");
 	for (int i=0; i<chargedData.numAviones; i++){
 		printf("%i ", initialSolution[i]);
-	} printf("\n ");
+	} printf("\n ");*/
 
 	return initialSolution;
 }
 
 //Check separation times between all planes, return true if all distances are ok and return false in other case
 int checkDistances(struct Data chargedData, int initialSolution[]){
+	
 	int boolDistances;
 
 	for (int i=0; i<chargedData.numAviones; i++){
 
 		int land1 = initialSolution[i];
-		printf("Comparando aterrizaje %i : %i \n",i, land1);
+		//printf("Comparando aterrizaje %i : %i \n",i, land1);
 
 		for (int j=0; j<chargedData.numAviones; j++){
 			if (i != j){
 				int land2 = initialSolution[j];
-				printf("Con aterrizaje %i : %i \n", j , land2);
-				printf("La separacion entre ambos debe ser mayor a: %i \n", chargedData.distancias[i][j]);
-				printf("Y es... %i \n ", abs(land2-land1));
+				//printf("Con aterrizaje %i : %i \n", j , land2);
+				//printf("La separacion entre ambos debe ser mayor a: %i \n", chargedData.distancias[i][j]);
+				//printf("Y es... %i \n ", abs(land2-land1));
 
 				//If distance is OK
 				if(abs(land2-land1) > chargedData.distancias[i][j]){
-					printf("Se respeta la distancia \n");
+					//printf("Se respeta la distancia \n");
 					boolDistances = true;
 				}
 				else{
-					printf("No se respeta la distancia entre avion %i y %i \n", i, j);
-					printf("Las distancias son %i y %i \n ", land1, land2);
+					//printf("No se respeta la distancia entre avion %i y %i \n", i, j);
+					//printf("Las distancias son %i y %i \n ", land1, land2);
 					boolDistances = false;
 					return boolDistances;
 				}
@@ -179,6 +182,24 @@ float * penalizaciones(struct Data chargedData, int initialSolution[], struct pe
 		}
 	}
 	return penalizaciones;
+}
+
+struct penalSolution finalSolutionTabuSearch(int numAviones, struct penalSolution penalSolution){
+	
+	int Sc[numAviones];
+	int tabuList[numAviones];
+	int Sbest[numAviones];
+	struct penalSolution finalSolution;
+
+	//Initializing Sc
+	for (int i=0; i<numAviones; i++){
+		Sc[i] = penalSolution.initialSolution[i];
+		//Initializing Sbest
+		Sbest[i] = Sc[i];
+	}
+
+	//Neighborhood of Sbest
+	return finalSolution;
 }
 
 int main(int argc, char *argv[]) {
@@ -253,6 +274,7 @@ int main(int argc, char *argv[]) {
 		printf("%f ", penalSolution.penalizacionSolution[i]);
 	}printf("\n ");
 
+	//Init Tabu Search
 
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
