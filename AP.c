@@ -136,23 +136,16 @@ int checkDistances(struct Data chargedData, int initialSolution[]){
 	for (int i=0; i<chargedData.numAviones; i++){
 
 		int land1 = initialSolution[i];
-		//printf("Comparando aterrizaje %i : %i \n",i, land1);
 
 		for (int j=0; j<chargedData.numAviones; j++){
 			if (i != j){
 				int land2 = initialSolution[j];
-				//printf("Con aterrizaje %i : %i \n", j , land2);
-				//printf("La separacion entre ambos debe ser mayor a: %i \n", chargedData.distancias[i][j]);
-				//printf("Y es... %i \n ", abs(land2-land1));
 
 				//If distance is OK
 				if(abs(land2-land1) > chargedData.distancias[i][j]){
-					//printf("Se respeta la distancia \n");
 					boolDistances = true;
 				}
 				else{
-					//printf("No se respeta la distancia entre avion %i y %i \n", i, j);
-					//printf("Las distancias son %i y %i \n ", land1, land2);
 					boolDistances = false;
 					return boolDistances;
 				}
@@ -177,6 +170,9 @@ float * penalizaciones(struct Data chargedData, int initialSolution[], struct pe
 		if(realTime > ti){
 			penalizaciones[i] = chargedData.penalizaciones[i][1];
 		}
+		else if(realTime == ti){
+			penalizaciones[i] = 0.00000; //Caso de aterrizar en el ideal landing time
+		}
 		else{
 			penalizaciones[i] = chargedData.penalizaciones[i][0];
 		}
@@ -187,7 +183,7 @@ float * penalizaciones(struct Data chargedData, int initialSolution[], struct pe
 struct penalSolution finalSolutionTabuSearch(int numAviones, struct penalSolution penalSolution){
 	
 	int Sc[numAviones];
-	int tabuList[numAviones];
+	int tabuList[10];
 	int Sbest[numAviones];
 	struct penalSolution finalSolution;
 
@@ -250,10 +246,15 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	printf("La solución es : ");
+	printf("La solución es      : ");
 	for (int i=0; i<chargedData.numAviones; i++){
 		printf("%i ", finalInitialSolution[i]);
-	}printf("\n ");
+	}printf("\n");
+
+	printf("La solución IDEAL es: ");
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("%i ", chargedData.avionesArray[i][1]);
+	}printf("\n");
 
 	//penalizations for finalInitialSolution
 	struct penalSolution penalSolution;
@@ -270,9 +271,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf("las penalizaciones son: ");
+	int penalizacionTotal; 
 	for(int i=0; i<chargedData.numAviones; i++){
+		penalizacionTotal+=penalSolution.penalizacionSolution[i];
 		printf("%f ", penalSolution.penalizacionSolution[i]);
 	}printf("\n ");
+	printf("La penalización total de la solución es: %i \n", penalizacionTotal);
 
 	//Init Tabu Search
 
