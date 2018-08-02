@@ -185,13 +185,12 @@ struct Solution solutionTabuSearch(int numAviones, struct Solution initSolution)
 }
 
 int main(int argc, char *argv[]) {
-	//begin clock
-	clock_t begin = clock();
 
-	//Se define un puntero a FILE para manejar archivos 
-	FILE *file = NULL;
+	clock_t begin = clock();	//begin clock
 
-	if (argc != 2){
+	FILE *file = NULL;			//Se define un puntero a FILE para manejar archivos 
+
+	if (argc != 2){	 
 		printf("Debes ingresar el nombre del archivo!\n");
 		return 1;
 	}
@@ -202,29 +201,23 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	//charge initial Data from file
-	struct Data chargedData = initData(file);
+	struct Data chargedData = initData(file);	//charge initial Data from file
 
-	//define pointer to initialSolution Array
-	int *initialSolution;
+	int *initialSolution;	//define pointer to initialSolution Array
 
-	//get initial solution 
-	initialSolution = initialSolutions(chargedData);
+	initialSolution = initialSolutions(chargedData);	//get initial solution 
 
-	//Check the separation times between all planes
-	int boolDistances;
+	int boolDistances;	//Check the separation times between all planes
 	boolDistances = checkDistances(chargedData, initialSolution);
 	printf("La distancia se cumple: %i \n", boolDistances);
 
-	//final initial Solution (factible)
-	int *finalInitialSolution;
+	int *finalInitialSolution;	//final initial Solution (factible)
 
-	//check factibility of first initial solution
-	if (boolDistances == true){
+	if (boolDistances == true){	//check factibility of first initial solution
 		printf("La solucion cumple con las restricciones duras");
 	}
-	else{
-		for (;;) {
+	else{	//try with other solutions 
+		for (;;) {	//stop when encounter a factible initial solution
 			finalInitialSolution = initialSolutions(chargedData);
 			boolDistances = checkDistances(chargedData, finalInitialSolution);
 			if (boolDistances == true){
@@ -242,24 +235,21 @@ int main(int argc, char *argv[]) {
 		printf("%i ", chargedData.avionesArray[i][1]);
 	}printf("\n");
 
-	//penalizations for finalInitialSolution
-	struct Solution penalSolution;
+	struct Solution penalSolution;	//penalizations for finalInitialSolution
+
 	int totalPenalizacion = 0; 
 
-	//Add finalInitialSolution to struct that contain the penalizations for this solution
-	for(int i=0; i<chargedData.numAviones; i++){
+	for(int i=0; i<chargedData.numAviones; i++){	//Add finalInitialSolution to struct that contain the penalizations for this solution
 		penalSolution.solution[i] = finalInitialSolution[i];
 	}
 
-	//Seteando las penalizaciones
-	float *penalizacionesArray = penalizaciones(chargedData, finalInitialSolution);
+	float *penalizacionesArray = penalizaciones(chargedData, finalInitialSolution);	//Seteando las penalizaciones
+
 	for(int i=0; i<chargedData.numAviones; i++){
 		penalSolution.penalizacion[i] = penalizacionesArray[i];
 	}
 
-	//seteando el total de penalizacion
-	setTotalPenalization(chargedData.numAviones, penalSolution);
-
+	setTotalPenalization(chargedData.numAviones, penalSolution);	//seteando el total de penalizacion
 
 	printf("las penalizaciones son: ");
 	for(int i=0; i<chargedData.numAviones; i++){
