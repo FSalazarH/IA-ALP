@@ -190,15 +190,17 @@ struct Solution getBestNeighbor(int numAviones, struct Solution initSolution, st
 		int aux_bool = checkDistances(chargedData, neighborhood[i]->solution);
 		neighborhood[i]->factible = aux_bool;
 	}
-
+	printf("\n");
+	printf("                         \n");
+	printf("------ VECINDARIO ------- \n");
 	for (int i=0; i<numAviones; i++){
 		for(int j=0; j<numAviones; j++){
 			printf("%i ", neighborhood[i]->solution[j]);
-		}printf("El vecino es factible? %i", neighborhood[i]->factible);
+		}printf("    ----       factible? %i", neighborhood[i]->factible);
 		printf("\n");
 	}
 
-	/*Calculando las penalizaciones de los vecinos factibles */
+	/*Seteando el vecindario FACTIBLE */
 	for(int i=0; i<numAviones; i++){
 		for(int j=0; j<numAviones; j++){
 			if(neighborhood[i]->factible == true){
@@ -206,10 +208,30 @@ struct Solution getBestNeighbor(int numAviones, struct Solution initSolution, st
 			}
 		}
 	}
+		/* Imprimiento el vecindario factible */
+	printf("\n");
+	printf("                         \n");
+	printf("------ VECINDARIO FACTIBLE ------- \n");
+	for(int i=0; i<numAviones; i++){
+		for(int j=0; j<numAviones; j++){
+			printf("%i ", factiblesNeighborhood[i]->solution[j]);
+		}printf("\n");
+	}
 
 	float *penalizacionesArray;	//Seteando las penalizaciones
-	penalizacionesArray = penalizaciones(chargedData, &factiblesNeighborhood[i]->solution[j]);
 
+	printf("\n");
+	printf("                         \n");
+	printf("------ PENALIZACIONES ------- \n");
+	for(int i=0; i<numAviones; i++){
+		for(int j=0; j<numAviones; j++){
+			penalizacionesArray = penalizaciones(chargedData, &factiblesNeighborhood[i]->solution[j]);	
+			//factiblesNeighborhood[i]->penalizacion[j] = penalizacionesArray[j];		
+			printf("%f ", penalizacionesArray[j]);
+		}printf("\n");
+	}
+
+	//penalizacionesArray = penalizaciones(chargedData, &factiblesNeighborhood[i]->solution[j]);
 
 	for (int i=0; i<numAviones; i++){
 		for(int j=0; j<numAviones; j++){
