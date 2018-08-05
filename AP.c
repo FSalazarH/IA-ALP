@@ -147,13 +147,15 @@ float * penalizaciones(struct Data chargedData, int initialSolution[]){
 
 		//compare landing time for penalization
 		if(realTime > ti){
-			penalizaciones[i] = chargedData.penalizaciones[i][1];
+			int delta = realTime - ti;
+			penalizaciones[i] = delta*chargedData.penalizaciones[i][1];
 		}
 		else if(realTime == ti){
 			penalizaciones[i] = 0.000000; //Caso de aterrizar en el ideal landing time
 		}
 		else{
-			penalizaciones[i] = chargedData.penalizaciones[i][0];
+			int delta = ti - realTime;
+			penalizaciones[i] = delta*chargedData.penalizaciones[i][0];
 		}
 	}
 	return penalizaciones;
@@ -197,16 +199,18 @@ struct Solution getBestNeighbor(int numAviones, struct Solution initSolution, st
 	}
 
 	/*Calculando las penalizaciones de los vecinos factibles */
-	float *penalizacionesArray;	//Seteando las penalizaciones
 	for(int i=0; i<numAviones; i++){
 		for(int j=0; j<numAviones; j++){
 			if(neighborhood[i]->factible == true){
 				factiblesNeighborhood[i]->solution[j] = neighborhood[i]->solution[j];
-				penalizacionesArray = penalizaciones(chargedData, &factiblesNeighborhood[i]->solution[j]);
-				factiblesNeighborhood[i]->penalizacion[j] = penalizacionesArray[j];
 			}
 		}
 	}
+
+	float *penalizacionesArray;	//Seteando las penalizaciones
+	penalizacionesArray = penalizaciones(chargedData, &factiblesNeighborhood[i]->solution[j]);
+
+
 	for (int i=0; i<numAviones; i++){
 		for(int j=0; j<numAviones; j++){
 			printf("%f ", factiblesNeighborhood[i]->penalizacion[j]);
