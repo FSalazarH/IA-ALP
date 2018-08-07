@@ -264,8 +264,20 @@ struct Solution * getNeighborhood(int numAviones, struct Solution initSolution, 
 	return neighborhood;
 }
 
+//Check if the solution is tabú
+int InTabuList(int indexBestSol, int tabuList[]){
+	for(int i=0; i<MAX_SIZE; i++){
+		if(indexBestSol == tabuList[i]){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+}
+
 //Funcion que setea la elección del siguiente movimiento y guarda en la lista tabú el número de la solución escogida 
-void selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution bestSolution, struct Solution * neighborhood, int * tabuList){
+int selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution bestSolution, struct Solution * neighborhood, int * tabuList){
 	float *penalizacionesAux[numAviones];
 	int totalPenalizacion;
 	int indexBestSol;
@@ -290,8 +302,10 @@ void selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution
 		/*finding the best sol */
 		if(neighborhood[i].totalPenalizacion < costoActual){ //vecino es mejor que la sol actual?
 			if(neighborhood[i].factible == true){	//vecino es factible?
-				costoActual = neighborhood[i].totalPenalizacion;	//nuevo vecino es la mejor opción del vecindario
-				indexBestSol = i;
+				if(InTabuList(i, tabuList) == false){	//Está en la lista tabú?
+					costoActual = neighborhood[i].totalPenalizacion;	//nuevo vecino es la mejor opción del vecindario
+					indexBestSol = i;
+				}
 			}
 		}
 
@@ -300,33 +314,51 @@ void selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution
 		}printf("Total: %i - Factible: %i \n", neighborhood[i].totalPenalizacion, neighborhood[i].factible);
 		printf("\n");
 	}
-	printf("La mejor solución del vecindario está en la posición %i \n", indexBestSol);
+	return indexBestSol;
 }
+
+
 
 struct Solution solutionTabuSearch(int numAviones, struct Solution initSolution, struct Data chargedData){
 	
-	int tabuList[10];					//lista tabú tamaño 10
-	struct Solution initialSolution;	//solución inicial factible -- Sc
+	struct Solution actualSolution;	//solución inicial factible -- Sc
 	struct Solution bestSolution;		//best solution  Sbest
 	int max_iter = 10;		
 	int max_solutions = 10;			//max nro iteraciones
 	struct Solution arraySolutions[max_solutions];	//arreglo que contendrá las soluciones para compararlas en el tiempo
+	struct Data data = chargedData;	//initial data
 
-	initialSolution = initSolution; 	//setting initial solution     -    Sc
-	bestSolution = initialSolution;		//setting best solution        -    Sbest  
+	actualSolution = initSolution; 	//setting initial solution     -    Sc
+	bestSolution = actualSolution;		//setting best solution        -    Sbest  
 
 	int costoSolInicial = getTotalPenalization(numAviones, bestSolution); //calculando costo de la solución inicial
-	int costoActual = costoSolInicial; // seteando el costo total de la solución inicial
-	bestSolution.totalPenalizacion = costoActual;
+	int costoActual = costoSolInicial; 
+	bestSolution.totalPenalizacion = costoActual;	//seteando el costo total de la solución inicial
 
-	struct Data data = chargedData;
+	struct Solution * neighborhood;
+	int indexBestSol;
 
-	//generate Neighborhood of Sbest with factibility
-	struct Solution * neighborhood = getNeighborhood(numAviones, bestSolution, data);
+	//Start loop tabú search
+	for(int i=0; i<max_iter; i++){
+		//generate Neighborhood of Sbest with factibility
+		neighborhood = getNeighborhood(numAviones, bestSolution, data);
 
-	//get best neighbor of neighborhood
-	selectBestNeighbor(numAviones, chargedData, bestSolution, neighborhood, tabuList);
-	
+		//get best neighbor of neighborhood NO TABU
+		indexBestSol = selectBestNeighbor(numAviones, chargedData, bestSolution, neighborhood, tabuList);
+		push(indexBestSol); //add index to tabu list
+		printf("La mejor solución del vecindario está en la posición %i \n \n", indexBestSol);
+		
+		printf("Lista tabú: ");
+		for(int j=0; j<i; j++){
+			printf("%i ", tabuList[j]);		
+		}printf("\n");
+
+		actualSolution = neighborhood[indexBestSol];
+		//if Sc es mejor que Sbest?
+		if(actualSolution.totalPenalizacion < bestSolution.totalPenalizacion){
+			bestSolution = actualSolution;
+		}
+	}
 	return bestSolution;
 }
 
