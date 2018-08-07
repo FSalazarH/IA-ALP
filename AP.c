@@ -162,13 +162,12 @@ float * penalizaciones(struct Data chargedData, int initialSolution[]){
 	return penalizaciones;
 }
 
-int setTotalPenalization(int numAviones, struct Solution solution){
-	int totalPenalizacion = 0;
+int getTotalPenalization(int numAviones, struct Solution solution){
+	float totalPenalizacion = 0;
 	for (int i=0; i<numAviones; i++){
 		totalPenalizacion += solution.penalizacion[i];	//Sum total penalizations
 	}
-	printf("El total de penalizaciones es %i\n", totalPenalizacion);
-	return 1;
+	return totalPenalizacion;
 }
 
 //Función que genera el vecindario y evalúa las penalizaciones de los vecinos, retorna el mejor vecino factible y su posición
@@ -216,22 +215,30 @@ struct Solution * getNeighborhood(int numAviones, struct Solution initSolution, 
 
 //Funcion que setea la elección del siguiente movimiento y guarda en la lista tabú el número de la solución escogida 
 void selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution * neighborhood, int * tabuList){
-	float *penalizacionesArr[numAviones][numAviones];
 	float *penalizacionesAux[numAviones];
+	int totalPenalizacion;
 
 	for(int i=0; i<numAviones; i++){
-		penalizacionesAux[i] = 	penalizaciones(chargedData, neighborhood[i].solution); 
+		penalizacionesAux[i] = 	penalizaciones(chargedData, neighborhood[i].solution); //get penalizacion for neighbor i 
+
 		printf("penalizacion del vecino %i :\n", i);
+
 		for(int j=0; j<numAviones; j++){
 			printf("%f ", penalizacionesAux[i][j]);
-			neighborhood[i].penalizacion[j] = penalizacionesAux[i][j];
+			neighborhood[i].penalizacion[j] = penalizacionesAux[i][j];	//set penalizacion por each plane of neighbor i
 		}printf("\n");
 	}printf("\n");
 
 	for(int i=0; i<numAviones; i++){
+
+		totalPenalizacion = getTotalPenalization(numAviones, neighborhood[i]);	//seteando el total de penalizaciones
+
+		neighborhood[i].totalPenalizacion = totalPenalizacion;
+
 		for(int j=0; j<numAviones; j++){
 			printf("%f ", neighborhood[i].penalizacion[j]);
-		}printf("\n");
+		}printf("Total: %i - Factible: %i \n", neighborhood[i].totalPenalizacion, neighborhood[i].factible);
+		printf("\n");
 	}
 }
 
@@ -323,7 +330,7 @@ int main(int argc, char *argv[]) {
 		solutionPenalizations.penalizacion[i] = penalizacionesArray[i];
 	}
 
-	setTotalPenalization(chargedData.numAviones, solutionPenalizations);	//seteando el total de penalizacion
+	getTotalPenalization(chargedData.numAviones, solutionPenalizations);	//seteando el total de penalizacion
 
 	printf("las penalizaciones son: ");
 	for(int i=0; i<chargedData.numAviones; i++){
