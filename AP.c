@@ -38,10 +38,11 @@ struct Solution{
 };
 
 /*TABU LIST*/
-int MAX_SIZE = 10;
-int tabuList[10];
+int MAX_SIZE = 15;
+int tabuList[15];
 int top = -1;
 
+int count = 0;
 int isEmpty(){
 	if(top == -1){
 		return 1;
@@ -64,11 +65,13 @@ int peek() {
 	return tabuList[top];
 }
 
+
 int pop(){
 	int data;
 	if(!isEmpty()){
 		data = tabuList[top];
 		top = top -1; 
+		count-=1;
 		return data;
 	}
 	else{
@@ -76,13 +79,22 @@ int pop(){
 	}
 }
 
+int vaciar(){
+	while(!isEmpty()){
+		pop();
+	}
+	return 1;
+}
+
 int push(int data){
 	if(!isFull()){
 		top = top + 1;
 		tabuList[top] = data;
+		count+=1;
 	}
 	else{
-		printf("Lista llena!");
+		pop();
+		push(data);
 	}
 }
 
@@ -137,8 +149,8 @@ int * initialSolutions(struct Data chargedData){
 	//generar solución aleatoria para cada avión
 	static int initialSolution[MAX_AVIONES];
 
-	//setting random seed	
-	srand(time(NULL));
+	//setting random seed
+
 	
 	for (int j=0; j<chargedData.numAviones; j++){
 
@@ -184,6 +196,38 @@ int checkDistances(struct Data chargedData, int initialSolution[]){
 	return boolDistances;
 }
 
+int * getFinalInitialSolution(struct Data chargedData){
+	printf("Generando una nueva solución inicial...\n");
+	int *initialSolution;	//define pointer to initialSolution Array
+	initialSolution = initialSolutions(chargedData);	//get initial solution 
+	int boolDistances;	
+	//boolDistances = checkDistances(chargedData, initialSolution);	//Check the separation times between all planes
+	//printf("La distancia se cumple: %i \n \n", boolDistances);
+	boolDistances = false;
+	int *finalInitialSolution;
+
+	//try with other solutions 
+	for (;;) {	//stop when encounter a factible initial solution
+		finalInitialSolution = initialSolutions(chargedData);
+		boolDistances = checkDistances(chargedData, finalInitialSolution);
+		if (boolDistances == true){
+			break;
+		}
+	}
+
+	printf("La solución es      : ");
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("%i ", finalInitialSolution[i]);
+	}printf("\n");
+	printf("La solución IDEAL es: ");
+	for (int i=0; i<chargedData.numAviones; i++){
+		printf("%i ", chargedData.avionesArray[i][1]);
+	}printf("\n");
+	printf("\n");
+
+	return finalInitialSolution;
+}
+
 //Función que setea las penalizaciones para los aterrizajes de cada avión de la solución inicial
 float * penalizaciones(struct Data chargedData, int initialSolution[]){
 	
@@ -217,6 +261,29 @@ int getTotalPenalization(int numAviones, struct Solution solution){
 		totalPenalizacion += solution.penalizacion[i];	//Sum total penalizations
 	}
 	return totalPenalizacion;
+}
+
+struct Solution firstSolutionPenalization(int finalInitialSolution[], struct Data chargedData){
+	struct Solution solutionPenalizations;	//penalizations for finalInitialSolution
+	int totalPenalizacion = 0; 
+
+	for(int i=0; i<chargedData.numAviones; i++){	//Add finalInitialSolution to struct that contain the penalizations for this solution
+		solutionPenalizations.solution[i] = finalInitialSolution[i];
+	}
+
+	float *penalizacionesArray = penalizaciones(chargedData, finalInitialSolution);	//Seteando las penalizaciones
+	for(int i=0; i<chargedData.numAviones; i++){
+		solutionPenalizations.penalizacion[i] = penalizacionesArray[i];
+	}
+
+	getTotalPenalization(chargedData.numAviones, solutionPenalizations);	//seteando el total de penalizacion
+
+	printf("las penalizaciones son: ");
+	for(int i=0; i<chargedData.numAviones; i++){
+		printf("%f ", solutionPenalizations.penalizacion[i]);
+	}printf("\n");
+
+	return solutionPenalizations;
 }
 
 //Función que genera el vecindario y evalúa las penalizaciones de los vecinos, retorna el mejor vecino factible y su posición
@@ -266,14 +333,22 @@ struct Solution * getNeighborhood(int numAviones, struct Solution initSolution, 
 
 //Check if the solution is tabú
 int InTabuList(int indexBestSol, int tabuList[]){
-	for(int i=0; i<MAX_SIZE; i++){
-		if(indexBestSol == tabuList[i]){
-			return true;
-		}
-		else{
-			return false;
+	if(isEmpty() == 1){
+		printf("Lista vacía!\n");
+		return false;
+	}
+
+	else{
+		for(int i=0; i<count; i++){
+			printf("index: %i\n", indexBestSol);
+			printf("tabuList[i]: %i\n", tabuList[i]);
+			if(indexBestSol == tabuList[i]){
+				printf("Está en la lista tabú\n");
+				return true;
+			}
 		}
 	}
+	return false;
 }
 
 //Funcion que setea la elección del siguiente movimiento y guarda en la lista tabú el número de la solución escogida 
@@ -293,30 +368,58 @@ int selectBestNeighbor(int numAviones, struct Data chargedData, struct Solution 
 		}
 	}
 
+	int costoMejorVecino;
+
+	/*Calculando el costo inicial que será el primer vecino factible*/
 	for(int i=0; i<numAviones; i++){
+		if(neighborhood[i].factible == true){
+			costoMejorVecino = getTotalPenalization(numAviones, neighborhood[i]);
+			neighborhood[i].totalPenalizacion = costoMejorVecino;
+			indexBestSol = i;
+			break;
+		}
+	}
 
-		totalPenalizacion = getTotalPenalization(numAviones, neighborhood[i]);	//seteando el total de penalizaciones
+	for(int j=0; j<numAviones; j++){
+		printf("%f ", neighborhood[0].penalizacion[j]);
+	}printf("Total: %i - Factible: %i \n", neighborhood[0].totalPenalizacion, neighborhood[0].factible);
+	printf("\n");	
 
+	for(int i=1; i<numAviones; i++){
+
+		totalPenalizacion = getTotalPenalization(numAviones, neighborhood[i]);	//seteando el total de penalizaciones para el siguiente vecino
 		neighborhood[i].totalPenalizacion = totalPenalizacion;
 
 		/*finding the best sol */
-		if(neighborhood[i].totalPenalizacion < costoActual){ //vecino es mejor que la sol actual?
-			if(neighborhood[i].factible == true){	//vecino es factible?
-				if(InTabuList(i, tabuList) == false){	//Está en la lista tabú?
-					costoActual = neighborhood[i].totalPenalizacion;	//nuevo vecino es la mejor opción del vecindario
+		printf("Costo mejor vecino actual: %i\n", costoMejorVecino);
+		printf("Costo candidato siguiente: %i\n", neighborhood[i].totalPenalizacion);
+		printf("Es mejor el nuevo?: %i\n", neighborhood[i].totalPenalizacion < costoMejorVecino);
+
+		if(neighborhood[i].factible==true){ //Comparando solo con los vecinos factibles
+			if(neighborhood[i].totalPenalizacion < costoMejorVecino){ //vecino es mejor que el mejor vecino anterior?
+				if(InTabuList(i, tabuList) == false){	//vecino es factible y no es tabú?
+					printf("El vecino %i ahora es el mejor \n", i);
+					costoMejorVecino = neighborhood[i].totalPenalizacion;	//nuevo vecino es la mejor opción del vecindario
+					indexBestSol= i;
+				}
+				if(i == numAviones-1 && InTabuList(i, tabuList) == true){ //El último candidato es tabú, terminar
+					printf("Finalizando porque son todos tabú\n");
+					costoMejorVecino = neighborhood[i].totalPenalizacion;
 					indexBestSol = i;
+					return false;
 				}
 			}
 		}
+		
 
 		for(int j=0; j<numAviones; j++){
 			printf("%f ", neighborhood[i].penalizacion[j]);
 		}printf("Total: %i - Factible: %i \n", neighborhood[i].totalPenalizacion, neighborhood[i].factible);
 		printf("\n");
 	}
+
 	return indexBestSol;
 }
-
 
 
 struct Solution solutionTabuSearch(int numAviones, struct Solution initSolution, struct Data chargedData){
@@ -324,9 +427,8 @@ struct Solution solutionTabuSearch(int numAviones, struct Solution initSolution,
 	struct Solution actualSolution;	//solución inicial factible -- Sc
 	struct Solution bestSolution;		//best solution  Sbest
 	int max_iter = 10;		
-	int max_solutions = 10;			//max nro iteraciones
-	struct Solution arraySolutions[max_solutions];	//arreglo que contendrá las soluciones para compararlas en el tiempo
 	struct Data data = chargedData;	//initial data
+	struct Solution finalBestSolution;
 
 	actualSolution = initSolution; 	//setting initial solution     -    Sc
 	bestSolution = actualSolution;		//setting best solution        -    Sbest  
@@ -338,34 +440,40 @@ struct Solution solutionTabuSearch(int numAviones, struct Solution initSolution,
 	struct Solution * neighborhood;
 	int indexBestSol;
 
-	//Start loop tabú search
 	for(int i=0; i<max_iter; i++){
-		//generate Neighborhood of Sbest with factibility
-		neighborhood = getNeighborhood(numAviones, bestSolution, data);
 
-		//get best neighbor of neighborhood NO TABU
-		indexBestSol = selectBestNeighbor(numAviones, chargedData, bestSolution, neighborhood, tabuList);
-		push(indexBestSol); //add index to tabu list
-		printf("La mejor solución del vecindario está en la posición %i \n \n", indexBestSol);
-		
-		printf("Lista tabú: ");
-		for(int j=0; j<i; j++){
-			printf("%i ", tabuList[j]);		
-		}printf("\n");
+		printf("Iteración n° %i\n", i);
+		neighborhood = getNeighborhood(numAviones, bestSolution, data);	//generate Neighborhood of Sbest with factibility flag
+		indexBestSol = selectBestNeighbor(numAviones, chargedData, bestSolution, neighborhood, tabuList);	//get best neighbor of neighborhood NO TABU
 
-		actualSolution = neighborhood[indexBestSol];
-		//if Sc es mejor que Sbest?
-		if(actualSolution.totalPenalizacion < bestSolution.totalPenalizacion){
-			bestSolution = actualSolution;
+		if(indexBestSol == false){//todos los movimientos son tabú
+			return bestSolution;
+		}
+		else{
+			push(indexBestSol); //add index to tabu list
+			printf("La mejor solución del vecindario está en la posición %i \n \n", indexBestSol);
+				
+			printf("Lista tabú: ");
+			for(int j=0; j<i+1; j++){
+				printf("%i ", tabuList[j]);		
+			}printf("\n");
+			printf("Top: %i \n", tabuList[top]);
+
+			actualSolution = neighborhood[indexBestSol];
+			//if Sc es mejor que Sbest?
+			if(actualSolution.totalPenalizacion < bestSolution.totalPenalizacion){
+				bestSolution = actualSolution;
+			}
 		}
 	}
+
 	return bestSolution;
 }
 
 int main(int argc, char *argv[]) {
+	srand(time(NULL));
 
 	clock_t begin = clock();	//begin clock
-
 	FILE *file = NULL;			//Se define un puntero a FILE para manejar archivos 
 
 	if (argc != 2){	 
@@ -381,62 +489,46 @@ int main(int argc, char *argv[]) {
 
 	struct Data chargedData = initData(file);	//charge initial Data from file
 
-	int *initialSolution;	//define pointer to initialSolution Array
+	//int *finalInitialSolution = getFinalInitialSolution(chargedData);	//final initial Solution (factible)
+	//struct Solution solutionPenalizations = firstSolutionPenalization(finalInitialSolution, chargedData);	//penalizations for finalInitialSolution
 
-	initialSolution = initialSolutions(chargedData);	//get initial solution 
 
-	int boolDistances;	
-	boolDistances = checkDistances(chargedData, initialSolution);	//Check the separation times between all planes
-	printf("La distancia se cumple: %i \n \n", boolDistances);	//1 true, 0 false
+	/*  -------------------------Tabú Search-----------------------*/
+	int max_solutions = 5;	//max nro soluciones
+	struct Solution arraySolutions[max_solutions];
+	struct Solution bestSolution;
+	struct Solution solutionPenalizations;
+	int *finalInitialSolution;
+	int costoTotal;
+	//Init Tabu Search
 
-	int *finalInitialSolution;	//final initial Solution (factible)
+	for(int i=0; i<max_solutions; i++){
+		finalInitialSolution = getFinalInitialSolution(chargedData);	//final initial Solution (factible)
+		solutionPenalizations = firstSolutionPenalization(finalInitialSolution, chargedData);	//penalizations for finalInitialSolution
+		
+		vaciar(); // Vacía lista tabú
+		printf("Realizando el tabu n°%i: \n", i);
 
-	if (boolDistances == true){	//check factibility of first initial solution
-		printf("La solucion cumple con las restricciones duras");
+		bestSolution = solutionTabuSearch(chargedData.numAviones, solutionPenalizations, chargedData);
+		arraySolutions[i] = bestSolution;
 	}
-	else{	//try with other solutions 
-		for (;;) {	//stop when encounter a factible initial solution
-			finalInitialSolution = initialSolutions(chargedData);
-			boolDistances = checkDistances(chargedData, finalInitialSolution);
-			if (boolDistances == true){
-				break;
-			}
+	costoTotal = arraySolutions[0].totalPenalizacion;
+	printf("Costo total inicial %i\n", costoTotal);
+
+	for(int i=1; i<max_solutions; i++){
+		int nuevoCosto = arraySolutions[i].totalPenalizacion;
+		printf("Costo sol %i: %i \n", i, nuevoCosto);
+		if(nuevoCosto < costoTotal){
+			costoTotal = nuevoCosto;
+			bestSolution = arraySolutions[i];
 		}
 	}
-	printf("La solución es      : ");
-	for (int i=0; i<chargedData.numAviones; i++){
-		printf("%i ", finalInitialSolution[i]);
-	}printf("\n");
-	printf("La solución IDEAL es: ");
-	for (int i=0; i<chargedData.numAviones; i++){
-		printf("%i ", chargedData.avionesArray[i][1]);
-	}printf("\n");
-	printf("\n");
-
-	struct Solution solutionPenalizations;	//penalizations for finalInitialSolution
-
-	int totalPenalizacion = 0; 
-
-	for(int i=0; i<chargedData.numAviones; i++){	//Add finalInitialSolution to struct that contain the penalizations for this solution
-		solutionPenalizations.solution[i] = finalInitialSolution[i];
-	}
-
-	float *penalizacionesArray = penalizaciones(chargedData, finalInitialSolution);	//Seteando las penalizaciones
-
+	
+	printf("\nMejor solución encontrada: \n");
 	for(int i=0; i<chargedData.numAviones; i++){
-		solutionPenalizations.penalizacion[i] = penalizacionesArray[i];
+		printf("%i ", bestSolution.solution[i]);
 	}
-
-	getTotalPenalization(chargedData.numAviones, solutionPenalizations);	//seteando el total de penalizacion
-
-	printf("las penalizaciones son: ");
-	for(int i=0; i<chargedData.numAviones; i++){
-		printf("%f ", solutionPenalizations.penalizacion[i]);
-	}printf("\n");
-
-	//Init Tabu Search
-	solutionTabuSearch(chargedData.numAviones, solutionPenalizations, chargedData);
-
+	printf("\nSu costo es: %i\n", bestSolution.totalPenalizacion);
 
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
